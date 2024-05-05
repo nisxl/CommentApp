@@ -10,38 +10,15 @@ class CommentController extends Controller
 {
     public function index()
     {
-        // Retrieve all comments with their replies recursively
-        $comments = Comment::with('replies')->get();
+        // Retrieve all comments along with their replies
+        $comments = Comment::whereNull('parent_id')->with('replies')->get();
     
-        // Filter out top-level comments (comments without a parent)
-        $topLevelComments = $comments->filter(function ($comment) {
-            return is_null($comment->parent_id);
-        });
-    
-        // Create a hierarchical structure for comments
-        $hierarchicalComments = $topLevelComments->map(function ($comment) use ($comments) {
-            return $this->buildCommentTree($comment, $comments);
-        });
-    
-        return response()->json($hierarchicalComments);
+        return response()->json($comments);
     }
     
-    // Helper method to recursively build comment tree
-    protected function buildCommentTree($comment, $comments)
-    {
-        $replies = $comment->replies->map(function ($reply) use ($comments) {
-            return $this->buildCommentTree($reply, $comments);
-        });
-    
-        return [
-            'id' => $comment->id,
-            'title' => $comment->title,
-            'content' => $comment->content,
-            'updated_at' => $comment->updated_at,
-            'replies' => $replies,
-        ];
-    }
-    
+
+
+
 
     public function getRepliesForParent($parentId)
     {

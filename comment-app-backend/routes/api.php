@@ -19,7 +19,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::get('/comments', [App\Http\Controllers\CommentController::class, 'index']);
+Route::get('/comments', [CommentController::class, 'index']);
 
 Route::post('/comments', [CommentController::class, 'store']);
 Route::post('/comments/{parentId}/reply', [CommentController::class, 'reply']);

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import moment from "moment";
-const Comment = ({ comment }) => {
+import AddCommentModal from "./AddCommentModal";
+const Comment = ({ comment, onCommentAdded }) => {
   const [editedAgo, setEditedAgo] = useState("");
   const [replyContent, setReplyContent] = useState("");
   const [replyTitle, setReplyTitle] = useState("");
@@ -24,8 +25,10 @@ const Comment = ({ comment }) => {
   }, [comment.updated_at]);
 
   const handleReplyButtonClick = () => {
-    setShowReplyForm(!showReplyForm);
+    setShowReplyForm(true);
   };
+
+  console.log("show reply", showReplyForm);
   const handleSubmitReply = async () => {
     try {
       const response = await axios.post("http://localhost:8000/api/comments", {
@@ -34,11 +37,12 @@ const Comment = ({ comment }) => {
         parent_id: comment.id,
       });
       console.log("Reply added:", response.data);
+      setShowReplyForm(false);
+      onCommentAdded();
     } catch (error) {
       console.error("Error adding reply:", error);
     }
   };
-  console.log(showReplyForm);
   return (
     <div>
       <div className="flex justify-between md:mx-24 my-3">
@@ -52,12 +56,14 @@ const Comment = ({ comment }) => {
           <div className="flex flex-col">
             <h2 className="font-bold">{comment.title}</h2>
             <p>{comment.content}</p>
-            <div
-              onClick={handleReplyButtonClick}
-              className="text-sm font-semibold self-start border-transparent rounded-md px-1 py-1 text-[#1da57e] cursor-pointer hover:bg-[#dceae5] transition duration-300 ease-in"
-            >
-              Reply Comment
-            </div>
+            {comment.replies && (
+              <div
+                onClick={handleReplyButtonClick}
+                className="text-sm font-semibold self-start border-transparent rounded-md px-1 py-1 text-[#1da57e] cursor-pointer hover:bg-[#dceae5] transition duration-300 ease-in"
+              >
+                Reply Comment
+              </div>
+            )}
 
             {showReplyForm && (
               <div className="flex flex-col ">
@@ -81,7 +87,7 @@ const Comment = ({ comment }) => {
                     Submit Reply
                   </button>
                   <button
-                    onClick={handleReplyButtonClick}
+                    onClick={() => setShowReplyForm(false)}
                     className="bg-[#d2372b] text-white rounded-md px-2 py-2 mt-2 text-sm font-bold"
                   >
                     Cancel
@@ -106,6 +112,7 @@ const Comment = ({ comment }) => {
 
 const Comments = () => {
   const [comments, setComments] = useState([]);
+  const [reload, setReload] = useState(false);
   const fetchComments = async () => {
     try {
       const response = await axios.get("http://localhost:8000/api/comments");
@@ -117,12 +124,21 @@ const Comments = () => {
 
   useEffect(() => {
     fetchComments();
-  }, []);
+  }, [reload]);
+
+  const handleCommentAdded = () => {
+    setReload(!reload);
+  };
 
   return (
     <div className="md:w-[70%] mx-auto">
+      <AddCommentModal onCommentAdded={handleCommentAdded} />
       {comments?.map((comment) => (
-        <Comment key={comment.id} comment={comment} />
+        <Comment
+          key={comment.id}
+          comment={comment}
+          onCommentAdded={handleCommentAdded}
+        />
       ))}
     </div>
   );
